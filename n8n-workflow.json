@@ -1,0 +1,233 @@
+{
+  "name": "Lead Qualification & Scoring System",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook - Lead Intake",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "lead-qualification-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"full_name\"]}}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{$json[\"body\"][\"email\"]}}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{$json[\"body\"][\"phone\"]}}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{$json[\"body\"][\"budget\"]}}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{$json[\"body\"][\"interest_level\"]}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "validation-node",
+      "name": "Validate Required Fields",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract lead data\nconst leadData = $input.item.json.body;\n\nconst fullName = leadData.full_name;\nconst email = leadData.email;\nconst phone = leadData.phone;\nconst companySize = leadData.company_size || 'Not specified';\nconst budget = parseFloat(leadData.budget) || 0;\nconst interestLevel = leadData.interest_level;\n\n// Scoring Logic\nlet score = 'COLD';\nlet priority = 'Low';\nlet scoreValue = 0;\n\nif (budget > 5000 && interestLevel.toLowerCase() === 'high') {\n  score = 'HOT';\n  priority = 'High';\n  scoreValue = 100;\n} else if (budget >= 2000 && budget <= 5000) {\n  score = 'WARM';\n  priority = 'Medium';\n  scoreValue = 50;\n} else if (interestLevel.toLowerCase() === 'medium') {\n  score = 'WARM';\n  priority = 'Medium';\n  scoreValue = 50;\n} else {\n  score = 'COLD';\n  priority = 'Low';\n  scoreValue = 25;\n}\n\n// Additional scoring based on company size\nif (companySize.toLowerCase().includes('large') || companySize.toLowerCase().includes('enterprise')) {\n  scoreValue += 20;\n  if (score === 'WARM') score = 'HOT';\n}\n\n// Return enriched data\nreturn {\n  json: {\n    full_name: fullName,\n    email: email,\n    phone: phone,\n    company_size: companySize,\n    budget: budget,\n    interest_level: interestLevel,\n    score: score,\n    priority: priority,\n    score_value: scoreValue,\n    timestamp: new Date().toISOString(),\n    processed_date: new Date().toLocaleDateString('fr-FR'),\n    processed_time: new Date().toLocaleTimeString('fr-FR')\n  }\n};"
+      },
+      "id": "scoring-node",
+      "name": "Calculate Lead Score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "append",
+        "baseId": "YOUR_AIRTABLE_BASE_ID",
+        "tableId": "YOUR_AIRTABLE_TABLE_ID",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Full Name": "={{$json[\"full_name\"]}}",
+            "Email": "={{$json[\"email\"]}}",
+            "Phone": "={{$json[\"phone\"]}}",
+            "Company Size": "={{$json[\"company_size\"]}}",
+            "Budget": "={{$json[\"budget\"]}}",
+            "Interest Level": "={{$json[\"interest_level\"]}}",
+            "Score": "={{$json[\"score\"]}}",
+            "Priority": "={{$json[\"priority\"]}}",
+            "Score Value": "={{$json[\"score_value\"]}}",
+            "Timestamp": "={{$json[\"timestamp\"]}}",
+            "Processed Date": "={{$json[\"processed_date\"]}}",
+            "Processed Time": "={{$json[\"processed_time\"]}}"
+          }
+        }
+      },
+      "id": "airtable-node",
+      "name": "Save to Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"score\"]}}",
+              "operation": "notEqual",
+              "value2": "COLD"
+            }
+          ]
+        }
+      },
+      "id": "notification-filter",
+      "name": "Filter - Hot & Warm Leads Only",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "channel": "#sales-leads",
+        "text": "=🔥 **New {{$json[\"score\"]}} Lead Alert!**\n\n👤 **Name:** {{$json[\"full_name\"]}}\n📧 **Email:** {{$json[\"email\"]}}\n📞 **Phone:** {{$json[\"phone\"]}}\n🏢 **Company Size:** {{$json[\"company_size\"]}}\n💰 **Budget:** ${{$json[\"budget\"]}}\n📊 **Interest Level:** {{$json[\"interest_level\"]}}\n\n⭐ **Score:** {{$json[\"score\"]}} ({{$json[\"score_value\"]}}/100)\n🎯 **Priority:** {{$json[\"priority\"]}}\n\n⏰ Received at {{$json[\"processed_time\"]}} on {{$json[\"processed_date\"]}}",
+        "otherOptions": {}
+      },
+      "id": "slack-node",
+      "name": "Send Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Lead received and processed successfully\",\n  \"data\": {\n    \"name\": \"{{$json[\"full_name\"]}}\",\n    \"score\": \"{{$json[\"score\"]}}\",\n    \"priority\": \"{{$json[\"priority\"]}}\"\n  }\n}"
+      },
+      "id": "response-node",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1250, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"error\": \"Validation failed - Missing required fields\",\n  \"required_fields\": [\"full_name\", \"email\", \"phone\", \"budget\", \"interest_level\"]\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "error-response-node",
+      "name": "Validation Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [650, 500]
+    }
+  ],
+  "connections": {
+    "Webhook - Lead Intake": {
+      "main": [
+        [
+          {
+            "node": "Validate Required Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Required Fields": {
+      "main": [
+        [
+          {
+            "node": "Calculate Lead Score",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validation Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Lead Score": {
+      "main": [
+        [
+          {
+            "node": "Save to Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Airtable": {
+      "main": [
+        [
+          {
+            "node": "Filter - Hot & Warm Leads Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter - Hot & Warm Leads Only": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-12-31T00:00:00.000Z",
+  "versionId": "1"
+}

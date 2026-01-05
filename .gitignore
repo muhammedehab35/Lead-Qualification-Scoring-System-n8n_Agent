@@ -1,0 +1,23 @@
+# Environment variables (contains sensitive credentials)
+.env
+
+# Node modules (if you add npm later)
+node_modules/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
