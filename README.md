@@ -77,9 +77,27 @@ Lead-Qualification-System/
 │   └── n8n-workflow.json          # Complete N8N workflow (ready to import)
 │
 └── 📚 assets/
+    ├── formulaire.png              # Professional contact form screenshot
     ├── workflow.png                # N8N workflow diagram
     └── table.png                   # Airtable database screenshot
 ```
+
+---
+
+## 🎨 User Interface
+
+### Professional Contact Form
+
+![Contact Form](assets/formulaire.png)
+
+The contact form features:
+- ✅ **Modern design** with gradient header and clean layout
+- ✅ **Organized sections** (Personal Info, Company Info, Project Details)
+- ✅ **Real-time validation** with clear error messages
+- ✅ **Mobile responsive** - works perfectly on all devices
+- ✅ **Loading states** with animated spinner during submission
+- ✅ **Success/error feedback** with smooth animations
+- ✅ **Privacy note** to build trust with users
 
 ---
 
