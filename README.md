@@ -1,11 +1,15 @@
 # 🚀 Lead Qualification & Scoring System
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Try%20it%20Now!-success?style=for-the-badge)](https://muhammedehab35.github.io/Lead-Qualification-Scoring-System-n8n_Agent/professional-form.html)
+
 [![N8N](https://img.shields.io/badge/N8N-Automation-EA4B71?logo=n8n)](https://n8n.io)
 [![Airtable](https://img.shields.io/badge/Airtable-Database-18BFFF?logo=airtable)](https://airtable.com)
 [![Slack](https://img.shields.io/badge/Slack-Notifications-4A154B?logo=slack)](https://slack.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 > An automated lead qualification and scoring system built with N8N that intelligently scores incoming leads, stores them in Airtable, and sends real-time notifications to Slack for high-priority prospects.
+
+📍 **[Try the Live Demo →](https://muhammedehab35.github.io/Lead-Qualification-Scoring-System-n8n_Agent/professional-form.html)**
 
 ---
 
